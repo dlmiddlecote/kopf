@@ -64,7 +64,7 @@ def delete(
         registry.register_cause_handler(
             group=group, version=version, plural=plural,
             event=causation.DELETE, id=id, timeout=timeout,
-            fn=fn)
+            fn=fn, should_add_finalizer=True)
         return fn
     return decorator
 

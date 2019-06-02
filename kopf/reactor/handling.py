@@ -217,9 +217,9 @@ async def handle_cause(
     if cause.event == causation.NOOP:
         logger.debug("Something has changed, but we are not interested (state is the same).")
 
-    # For the case of a newly created object, lock it to this operator.
-    # TODO: make it conditional.
-    if cause.event == causation.NEW:
+    # For the case of a newly created object, lock it to this operator,
+    # if the resource should be.
+    if cause.event == causation.NEW and registry.should_add_finalizer(cause.resource):
         logger.debug("Adding the finalizer, thus preventing the actual deletion.")
         finalizers.append_finalizers(body=body, patch=patch)
 

@@ -62,6 +62,7 @@ class Cause(NamedTuple):
     new: Optional[Any] = None
 
 
+# TODO/dlm: This needs to change as we may not have finalizers anymore. 
 def detect_cause(
         event: Mapping,
         **kwargs

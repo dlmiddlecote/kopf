@@ -53,6 +53,7 @@ class SimpleRegistry(BaseRegistry):
     def __init__(self, prefix=None):
         super().__init__()
         self.prefix = prefix
+        self.should_add_finalizer = False
         self._handlers = []  # [Handler, ...]
 
     def __bool__(self):
@@ -61,7 +62,7 @@ class SimpleRegistry(BaseRegistry):
     def append(self, handler):
         self._handlers.append(handler)
 
-    def register(self, fn, id=None, event=None, field=None, timeout=None):
+    def register(self, fn, id=None, event=None, field=None, timeout=None, should_add_finalizer=False):
 
         if field is None:
             field = None  # for the non-field events
@@ -78,6 +79,10 @@ class SimpleRegistry(BaseRegistry):
         handler = Handler(id=id, fn=fn, event=event, field=field, timeout=timeout)
 
         self.append(handler)
+
+        if should_add_finalizer:
+            self.should_add_finalizer = True
+
         return fn  # to be usable as a decorator too.
 
     def iter_cause_handlers(self, cause):
@@ -127,13 +132,13 @@ class GlobalRegistry(BaseRegistry):
         self._event_handlers: MutableMapping[Resource, SimpleRegistry] = {}
 
     def register_cause_handler(self, group, version, plural, fn,
-                               id=None, event=None, field=None, timeout=None):
+                               id=None, event=None, field=None, timeout=None, should_add_finalizer=False):
         """
         Register an additional handler function for the specific resource and specific event.
         """
         resource = Resource(group, version, plural)
         registry = self._cause_handlers.setdefault(resource, SimpleRegistry())
-        registry.register(event=event, field=field, fn=fn, id=id, timeout=timeout)
+        registry.register(event=event, field=field, fn=fn, id=id, timeout=timeout, should_add_finalizer=should_add_finalizer)
         return fn  # to be usable as a decorator too.
 
     def register_event_handler(self, group, version, plural, fn, id=None):
@@ -173,6 +178,16 @@ class GlobalRegistry(BaseRegistry):
         resource_registry = self._event_handlers.get(resource, None)
         if resource_registry is not None:
             yield from resource_registry.iter_event_handlers(resource=resource, event=event)
+
+    def should_add_finalizer(self, resource):
+        """
+        Return whether a finalizer should be added to
+        the given resource or not.
+        """
+        resource_registry = self._cause_handlers.get(resource, None)
+        if resource_registry is None:
+            return False
+        return resource_registry.should_add_finalizer
 
 
 _default_registry = GlobalRegistry()
