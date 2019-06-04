@@ -62,9 +62,9 @@ class Cause(NamedTuple):
     new: Optional[Any] = None
 
 
-# TODO/dlm: This needs to change as we may not have finalizers anymore. 
 def detect_cause(
         event: Mapping,
+        skip_new=False,
         **kwargs
 ) -> Cause:
     """
@@ -99,7 +99,7 @@ def detect_cause(
 
     # For a fresh new object, first block it from accidental deletions without our permission.
     # The actual handler will be called on the next call.
-    if not finalizers.has_finalizers(body):
+    if not skip_new and not finalizers.has_finalizers(body):
         return Cause(
             event=NEW,
             body=body,

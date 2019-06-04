@@ -110,7 +110,8 @@ async def custom_object_handler(
     # Object patch accumulator. Populated by the methods. Applied in the end of the handler.
     # Detect the cause and handle it (or at least log this happened).
     if registry.has_cause_handlers(resource=resource):
-        cause = causation.detect_cause(event=event, resource=resource, logger=logger, patch=patch)
+        skip_new = registry.has_mandatory_deletion_handlers(resource=resource)
+        cause = causation.detect_cause(event=event, resource=resource, logger=logger, patch=patch, skip_new=skip_new)
         delay = await handle_cause(lifecycle=lifecycle, registry=registry, cause=cause)
 
     # Provoke a dummy change to trigger the reactor after sleep.
@@ -217,9 +218,11 @@ async def handle_cause(
     if cause.event == causation.NOOP:
         logger.debug("Something has changed, but we are not interested (state is the same).")
 
-    # For the case of a newly created object, lock it to this operator,
-    # if the resource should be.
-    if cause.event == causation.NEW and registry.should_add_finalizer(cause.resource):
+    # For the case of a newly created object, lock it to this operator.
+    # NOTE: Not all newly created object will produce a 'NEW' causation event, this
+    # NOTE: only happens when there are mandatory deletion handlers registered for
+    # NOTE: the given object.
+    if cause.event == causation.NEW:
         logger.debug("Adding the finalizer, thus preventing the actual deletion.")
         finalizers.append_finalizers(body=body, patch=patch)
 
