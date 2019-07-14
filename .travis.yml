@@ -36,6 +36,7 @@ before_script:
   - tools/kubernetes-client.sh
 
 script:
+  - echo "${TRAVIS_PULL_REQUEST_SLUG} - ${TRAVIS_REPO_SLUG}"
   - pytest -v
   - if [[ -n "${TRAVIS_PULL_REQUEST_SLUG}" && "${TRAVIS_PULL_REQUEST_SLUG}" == "${TRAVIS_REPO_SLUG}" ]]; then
       coveralls;
