@@ -37,8 +37,12 @@ before_script:
 
 script:
   - pytest -v
-  - coveralls
-  - codecov --flags unit
+  - if [[ -n "${TRAVIS_PULL_REQUEST_SLUG}" && "${TRAVIS_PULL_REQUEST_SLUG}" == "${TRAVIS_REPO_SLUG}" ]]; then
+      coveralls;
+    fi
+  - if [[ -n "${TRAVIS_PULL_REQUEST_SLUG}" && "${TRAVIS_PULL_REQUEST_SLUG}" == "${TRAVIS_REPO_SLUG}" ]]; then
+      codecov --flags unit;
+    fi
   - pytest -v --only-e2e  # NB: after the coverage uploads!
 
 deploy:
