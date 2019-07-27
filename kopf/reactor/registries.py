@@ -45,6 +45,7 @@ class Handler(NamedTuple):
     initial: Optional[bool] = None
     labels: Optional[Mapping] = None
     annotations: Optional[Mapping] = None
+    parent: Optional[Resource] = None
 
 
 class BaseRegistry(metaclass=abc.ABCMeta):
@@ -122,7 +123,7 @@ class SimpleRegistry(BaseRegistry):
         self._handlers.append(handler)
 
     def register(self, fn, id=None, event=None, field=None, timeout=None, initial=None, requires_finalizer=False,
-                 labels=None, annotations=None):
+                 labels=None, annotations=None, parent=None):
         if field is None:
             field = None  # for the non-field events
         elif isinstance(field, str):
@@ -136,7 +137,7 @@ class SimpleRegistry(BaseRegistry):
         id = id if field is None else f'{id}/{".".join(field)}'
         id = id if self.prefix is None else f'{self.prefix}/{id}'
         handler = Handler(id=id, fn=fn, event=event, field=field, timeout=timeout, initial=initial,
-                          labels=labels, annotations=annotations)
+                          labels=labels, annotations=annotations, parent=parent)
 
         self.append(handler)
 
@@ -201,24 +202,26 @@ class GlobalRegistry(BaseRegistry):
 
     def register_cause_handler(self, group, version, plural, fn,
                                id=None, event=None, field=None, timeout=None, initial=None, requires_finalizer=False,
-                               labels=None, annotations=None):
+                               labels=None, annotations=None, parent=None):
         """
         Register an additional handler function for the specific resource and specific event.
         """
         resource = Resource(group, version, plural)
+        parent_resource = build_parent_resource(parent, resource)
         registry = self._cause_handlers.setdefault(resource, SimpleRegistry())
         registry.register(event=event, field=field, fn=fn, id=id, timeout=timeout, initial=initial, requires_finalizer=requires_finalizer,
-                          labels=labels, annotations=annotations)
+                          labels=labels, annotations=annotations, parent=parent_resource)
         return fn  # to be usable as a decorator too.
 
     def register_event_handler(self, group, version, plural, fn, id=None, labels=None,
-                               annotations=None):
+                               annotations=None, parent=None):
         """
         Register an additional handler function for low-level events.
         """
         resource = Resource(group, version, plural)
+        parent_resource = build_parent_resource(parent, resource)
         registry = self._event_handlers.setdefault(resource, SimpleRegistry())
-        registry.register(fn=fn, id=id, labels=labels, annotations=annotations)
+        registry.register(fn=fn, id=id, labels=labels, annotations=annotations, parent=parent_resource)
         return fn  # to be usable as a decorator too.
 
     @property
@@ -264,6 +267,17 @@ class GlobalRegistry(BaseRegistry):
         if resource_registry is None:
             return False
         return resource_registry.requires_finalizer(resource)
+
+
+def build_parent_resource(parent, resource):
+    if parent is None:
+        return None
+
+    if isinstance(parent, str):
+        return Resource(resource.group, resource.version, parent)
+
+    group, version, plural = parent
+    return Resource(group, version, plural)
 
 
 _default_registry = GlobalRegistry()

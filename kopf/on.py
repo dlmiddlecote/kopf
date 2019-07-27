@@ -25,14 +25,15 @@ def resume(
         timeout: Optional[float] = None,
         registry: Optional[registries.GlobalRegistry] = None,
         labels: Optional[Mapping] = None,
-        annotations: Optional[Mapping] = None):
+        annotations: Optional[Mapping] = None,
+        parent: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
     """ ``@kopf.on.resume()`` handler for the object resuming on operator (re)start. """
     registry = registry if registry is not None else registries.get_default_registry()
     def decorator(fn):
         registry.register_cause_handler(
             group=group, version=version, plural=plural,
             event=None, initial=True, id=id, timeout=timeout,
-            fn=fn, labels=labels, annotations=annotations)
+            fn=fn, labels=labels, annotations=annotations, parent=parent)
         return fn
     return decorator
 
@@ -44,14 +45,15 @@ def create(
         timeout: Optional[float] = None,
         registry: Optional[registries.GlobalRegistry] = None,
         labels: Optional[Mapping] = None,
-        annotations: Optional[Mapping] = None):
+        annotations: Optional[Mapping] = None,
+        parent: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
     """ ``@kopf.on.create()`` handler for the object creation. """
     registry = registry if registry is not None else registries.get_default_registry()
     def decorator(fn):
         registry.register_cause_handler(
             group=group, version=version, plural=plural,
             event=causation.CREATE, id=id, timeout=timeout,
-            fn=fn, labels=labels, annotations=annotations)
+            fn=fn, labels=labels, annotations=annotations, parent=parent)
         return fn
     return decorator
 
@@ -63,14 +65,15 @@ def update(
         timeout: Optional[float] = None,
         registry: Optional[registries.GlobalRegistry] = None,
         labels: Optional[Mapping] = None,
-        annotations: Optional[Mapping] = None):
+        annotations: Optional[Mapping] = None,
+        parent: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
     """ ``@kopf.on.update()`` handler for the object update or change. """
     registry = registry if registry is not None else registries.get_default_registry()
     def decorator(fn):
         registry.register_cause_handler(
             group=group, version=version, plural=plural,
             event=causation.UPDATE, id=id, timeout=timeout,
-            fn=fn, labels=labels, annotations=annotations)
+            fn=fn, labels=labels, annotations=annotations, parent=parent)
         return fn
     return decorator
 
@@ -83,7 +86,8 @@ def delete(
         registry: Optional[registries.GlobalRegistry] = None,
         optional: Optional[bool] = None,
         labels: Optional[Mapping] = None,
-        annotations: Optional[Mapping] = None):
+        annotations: Optional[Mapping] = None,
+        parent: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
     """ ``@kopf.on.delete()`` handler for the object deletion. """
     registry = registry if registry is not None else registries.get_default_registry()
     def decorator(fn):
@@ -91,7 +95,7 @@ def delete(
             group=group, version=version, plural=plural,
             event=causation.DELETE, id=id, timeout=timeout,
             fn=fn, requires_finalizer=bool(not optional),
-            labels=labels, annotations=annotations)
+            labels=labels, annotations=annotations, parent=parent)
         return fn
     return decorator
 
@@ -104,14 +108,15 @@ def field(
         timeout: Optional[float] = None,
         registry: Optional[registries.GlobalRegistry] = None,
         labels: Optional[Mapping] = None,
-        annotations: Optional[Mapping] = None):
+        annotations: Optional[Mapping] = None,
+        parent: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
     """ ``@kopf.on.field()`` handler for the individual field changes. """
     registry = registry if registry is not None else registries.get_default_registry()
     def decorator(fn):
         registry.register_cause_handler(
             group=group, version=version, plural=plural,
             event=None, field=field, id=id, timeout=timeout,
-            fn=fn, labels=labels, annotations=annotations)
+            fn=fn, labels=labels, annotations=annotations, parent=parent)
         return fn
     return decorator
 
@@ -122,13 +127,14 @@ def event(
         id: Optional[str] = None,
         registry: Optional[registries.GlobalRegistry] = None,
         labels: Optional[Mapping] = None,
-        annotations: Optional[Mapping] = None):
+        annotations: Optional[Mapping] = None,
+        parent: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
     """ ``@kopf.on.event()`` handler for the silent spies on the events. """
     registry = registry if registry is not None else registries.get_default_registry()
     def decorator(fn):
         registry.register_event_handler(
             group=group, version=version, plural=plural,
-            id=id, fn=fn, labels=labels, annotations=annotations)
+            id=id, fn=fn, labels=labels, annotations=annotations, parent=parent)
         return fn
     return decorator
 
